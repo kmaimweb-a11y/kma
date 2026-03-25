@@ -527,7 +527,9 @@ def is_relevant(article, source):
         return True
 
     soft_keywords = [keyword.lower() for keyword in SOFT_AI_KEYWORDS_BY_SOURCE.get(source_name, [])]
-    has_source_soft_keyword = any(keyword in title_lower for keyword in soft_keywords)
+    has_source_soft_keyword = any(keyword in title_lower for keyword in soft_keywords) or any(
+        keyword in summary_lower for keyword in soft_keywords
+    )
     if has_source_soft_keyword:
         return True
 
