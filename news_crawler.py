@@ -65,11 +65,11 @@ SOURCES = [
     {
         "name": "산업통상자원부",
         "type": "html",
-        "url": "https://www.motie.go.kr/kor/article/ATCL3f49a5a8c/list",
+        "url": "https://www.motir.go.kr/kor/article/ATCL3f49a5a8c",
         "category": "산업·제조AI",
         "content_type": "보도자료",
         "keywords": ["AI", "인공지능", "휴머노이드", "제조AI", "로봇", "반도체", "자율주행", "산업데이터"],
-        "link_patterns": [r"/kor/article/ATCL3f49a5a8c/\d+/view"],
+        "link_patterns": [r"/kor/article/ATCL[a-z0-9]+"],
     },
     {
         "name": "국토교통부",
