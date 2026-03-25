@@ -351,9 +351,26 @@ def fetch_article_metadata(session, url):
         flags=re.IGNORECASE,
     )
 
+    body_image_patterns = [
+        r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>',
+        r'background-image\s*:\s*url\(["\']?([^)"\']+)["\']?\)',
+    ]
+
     title_value = strip_tags(title_match.group(1)) if title_match else ""
     summary_value = compact_summary(desc_match.group(1)) if desc_match else ""
     image_value = normalize_url(image_match.group(1)) if image_match else ""
+
+    if not image_value:
+        for pattern in body_image_patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if not match:
+                continue
+            candidate = normalize_url(urljoin(final_url, match.group(1)))
+            lowered_candidate = candidate.lower()
+            if any(blocked in lowered_candidate for blocked in ["logo", "icon", "banner", "common"]):
+                continue
+            image_value = candidate
+            break
 
     if "홈페이지에 오신" in summary_value or "홈페이지에 오신" in title_value:
         return None
