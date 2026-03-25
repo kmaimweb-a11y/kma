@@ -25,6 +25,7 @@ SOURCES = [
         "type": "rss",
         "url": "https://www.korea.kr/rss/policy.xml",
         "category": "정부정책",
+        "content_type": "뉴스",
         "keywords": ["AI", "인공지능", "생성형 AI", "디지털", "데이터", "알고리즘"],
     },
     {
@@ -32,14 +33,16 @@ SOURCES = [
         "type": "html",
         "url": "https://www.pipc.go.kr/np/cop/bbs/selectBoardList.do?bbsId=BS074&mCode=C020010000",
         "category": "개인정보·가이드라인",
+        "content_type": "보도자료",
         "keywords": ["AI", "인공지능", "생성형", "데이터", "프라이버시", "마이데이터", "알고리즘"],
         "link_patterns": [r"/np/cop/bbs/selectBoardArticle\.do\?bbsId=BS074[^\"'#\s>]*nttId=\d+"],
     },
     {
         "name": "과학기술정보통신부",
         "type": "rss",
-        "url": "https://www.msit.go.kr/rss/rss.jsp?mPid=001",
+        "url": "https://www.msit.go.kr/user/rss/rss.do?bbsSeqNo=94",
         "category": "정부정책",
+        "content_type": "보도자료",
         "keywords": ["AI", "인공지능", "디지털", "데이터", "클라우드", "플랫폼", "반도체"],
     },
     {
@@ -47,21 +50,24 @@ SOURCES = [
         "type": "rss",
         "url": "https://www.mois.go.kr/gpms/view/jsp/rss/rss.jsp?ctxCd=1012",
         "category": "디지털정부",
+        "content_type": "보도자료",
         "keywords": ["AI", "인공지능", "디지털정부", "공공서비스", "데이터", "행정", "플랫폼"],
     },
     {
-        "name": "디지털플랫폼정부위원회",
+        "name": "조달청",
         "type": "html",
-        "url": "https://dpg.go.kr/DPG/contents/DPG02020000.do",
-        "category": "디지털정부",
-        "keywords": ["AI", "인공지능", "초거대", "디지털플랫폼정부", "공공", "데이터"],
-        "link_patterns": [r"/DPG/contents/DPG02020000\.do\?id=\d+[^\"'#\s>]*"],
+        "url": "https://www.pps.go.kr/kor/bbs/list.do?key=00634",
+        "category": "공공조달·디지털정부",
+        "content_type": "보도자료",
+        "keywords": ["AI", "인공지능", "디지털", "데이터", "나라장터", "정보화", "플랫폼", "혁신제품"],
+        "link_patterns": [r"/kor/bbs/view\.do\?bbsSn=\d+[^\"'#\s>]*key=00634"],
     },
     {
         "name": "한국인터넷진흥원",
         "type": "rss",
         "url": "https://kisa.or.kr/rss/402",
         "category": "AI보안·신뢰",
+        "content_type": "보도자료",
         "keywords": ["AI", "인공지능", "보안", "프라이버시", "클라우드", "사이버", "가이드라인"],
     },
 ]
@@ -256,6 +262,7 @@ def parse_rss(xml_payload, source):
                 "image_url": image_url,
                 "source_name": source["name"],
                 "category": source["category"],
+                "content_type": source.get("content_type", "보도자료"),
             }
         )
     return items
@@ -292,6 +299,7 @@ def parse_html_list(html_text, source):
                 "image_url": "",
                 "source_name": source["name"],
                 "category": source["category"],
+                "content_type": source.get("content_type", "보도자료"),
             }
         )
     return articles
@@ -361,16 +369,36 @@ def fetch_article_metadata(session, url):
     image_value = normalize_url(image_match.group(1)) if image_match else ""
 
     if not image_value:
+        image_candidates = []
         for pattern in body_image_patterns:
-            match = re.search(pattern, text, flags=re.IGNORECASE)
-            if not match:
-                continue
-            candidate = normalize_url(urljoin(final_url, match.group(1)))
-            lowered_candidate = candidate.lower()
-            if any(blocked in lowered_candidate for blocked in ["logo", "icon", "banner", "common"]):
-                continue
-            image_value = candidate
-            break
+            matches = re.findall(pattern, text, flags=re.IGNORECASE)
+            for matched_value in matches:
+                candidate = normalize_url(urljoin(final_url, matched_value))
+                lowered_candidate = candidate.lower()
+                if any(blocked in lowered_candidate for blocked in ["logo", "icon", "banner", "common", "symbol"]):
+                    continue
+                image_candidates.append(candidate)
+
+        if image_candidates:
+            def image_priority(candidate_url):
+                lowered = candidate_url.lower()
+                score = 0
+                if "ckeditor/imagedownload.do" in lowered:
+                    score += 100
+                if "/ckeditor/" in lowered:
+                    score += 40
+                if any(ext in lowered for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+                    score += 10
+                if "thumb" in lowered or "thumbnail" in lowered:
+                    score -= 15
+                return score
+
+            image_candidates = sorted(
+                list(dict.fromkeys(image_candidates)),
+                key=image_priority,
+                reverse=True,
+            )
+            image_value = image_candidates[0]
 
     if "홈페이지에 오신" in summary_value or "홈페이지에 오신" in title_value:
         return None
@@ -537,6 +565,7 @@ def deduplicate(articles):
         article["image_url"] = article.get("image_url") or DEFAULT_IMAGE_URL
         article["summary"] = compact_summary(article.get("summary", ""))
         article["category"] = article.get("category") or "정부정책"
+        article["content_type"] = article.get("content_type") or "보도자료"
         unique.append(article)
     return unique
 
