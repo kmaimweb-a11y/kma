@@ -66,6 +66,52 @@ SOURCES = [
     },
 ]
 
+STRICT_AI_KEYWORDS = [
+    "ai",
+    "인공지능",
+    "생성형",
+    "초거대",
+    "llm",
+    "aix",
+    "ax",
+    "온디바이스 ai",
+    "ai 에이전트",
+    "ai정부",
+]
+
+SECONDARY_POLICY_KEYWORDS = [
+    "디지털",
+    "데이터",
+    "플랫폼",
+    "클라우드",
+    "보안",
+    "알고리즘",
+    "반도체",
+]
+
+BLOCKED_GENERIC_KEYWORDS = [
+    "지방",
+    "재난",
+    "화재",
+    "기부",
+    "봉사",
+    "지방선거",
+    "국정과제",
+    "민생",
+    "주민등록",
+    "새마을금고",
+    "주유소",
+    "고향사랑",
+    "공장",
+    "행사",
+    "교육",
+    "워크숍",
+    "채용",
+    "입찰",
+    "인사",
+    "광고",
+]
+
 
 def log(message):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -325,6 +371,7 @@ def is_relevant(article, source):
     summary = strip_tags(article.get("summary", ""))
     title_lower = title.lower()
     summary_lower = summary.lower()
+    haystack = (title_lower + " " + summary_lower).strip()
 
     blocked_title_keywords = [
         "인사",
@@ -342,12 +389,28 @@ def is_relevant(article, source):
         if not any(keyword in title_lower for keyword in allowed_with_blocked):
             return False
 
+    if any(keyword in haystack for keyword in BLOCKED_GENERIC_KEYWORDS):
+        if not any(keyword in haystack for keyword in STRICT_AI_KEYWORDS):
+            return False
+
+    has_strict_ai = any(keyword in title_lower for keyword in STRICT_AI_KEYWORDS) or any(
+        keyword in summary_lower for keyword in STRICT_AI_KEYWORDS
+    )
+    if has_strict_ai:
+        return True
+
+    has_source_keyword = False
     for keyword in source.get("keywords", []):
         keyword_lower = keyword.lower()
-        if keyword_lower in title_lower:
-            return True
-        if keyword_lower in summary_lower:
-            return True
+        if keyword_lower in title_lower or keyword_lower in summary_lower:
+            has_source_keyword = True
+            break
+
+    has_secondary_policy = any(keyword in haystack for keyword in SECONDARY_POLICY_KEYWORDS)
+
+    if has_source_keyword and has_secondary_policy:
+        return False
+
     return False
 
 
