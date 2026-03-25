@@ -321,17 +321,23 @@ def chunked(values, size):
         yield values[index : index + size]
 
 
-def upsert_articles(session, supabase_url, service_key, articles):
+def upsert_articles(headers = build_supabase_headers(service_key)):
     if not articles:
         log("No articles to upsert.")
         return 0
 
     endpoint = supabase_url.rstrip("/") + "/rest/v1/articles"
     headers = {
-        "apikey": service_key,
-        "Authorization": f"Bearer {service_key}",
+def build_supabase_headers(api_key):
+    headers = {
+        "apikey": api_key,
         "Content-Type": "application/json",
         "Prefer": "resolution=merge-duplicates,return=representation",
+    }
+    if not api_key.startswith("sb_"):
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
+
     }
 
     inserted = 0
