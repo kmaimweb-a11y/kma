@@ -180,8 +180,8 @@ def first_text(parent, *tags):
     return ""
 
 
-def parse_rss(xml_text, source):
-    root = ET.fromstring(xml_text)
+def parse_rss(xml_payload, source):
+    root = ET.fromstring(xml_payload)
     channel = root.find("channel")
     if channel is None:
         return []
@@ -289,6 +289,10 @@ def fetch_article_metadata(session, url):
         return None
 
     final_url = normalize_url(response.url)
+    parsed_final_url = urlparse(final_url)
+    if parsed_final_url.path in ("", "/", "/main.do"):
+        return None
+
     title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.IGNORECASE | re.DOTALL)
     desc_match = re.search(
         r'<meta[^>]+(?:name|property)=["\'](?:description|og:description)["\'][^>]+content=["\']([^"\']+)["\']',
@@ -301,11 +305,18 @@ def fetch_article_metadata(session, url):
         flags=re.IGNORECASE,
     )
 
+    title_value = strip_tags(title_match.group(1)) if title_match else ""
+    summary_value = compact_summary(desc_match.group(1)) if desc_match else ""
+    image_value = normalize_url(image_match.group(1)) if image_match else ""
+
+    if "홈페이지에 오신" in summary_value or "홈페이지에 오신" in title_value:
+        return None
+
     return {
         "final_url": final_url,
-        "title": strip_tags(title_match.group(1)) if title_match else "",
-        "summary": compact_summary(desc_match.group(1)) if desc_match else "",
-        "image_url": normalize_url(image_match.group(1)) if image_match else "",
+        "title": title_value,
+        "summary": summary_value,
+        "image_url": image_value,
     }
 
 
@@ -345,7 +356,7 @@ def load_source_articles(session, source):
     response = fetch_with_retry(session, source["url"], timeout=REQUEST_TIMEOUT)
 
     if source["type"] == "rss":
-        raw_articles = parse_rss(response.text, source)
+        raw_articles = parse_rss(response.content, source)
     else:
         raw_articles = parse_html_list(response.text, source)
 
@@ -359,6 +370,15 @@ def load_source_articles(session, source):
         if not metadata:
             continue
         article["article_url"] = metadata["final_url"] or article["article_url"]
+        if metadata["title"] and is_relevant(
+            {
+                "title": metadata["title"],
+                "summary": article.get("summary", ""),
+                "category": article.get("category", ""),
+            },
+            source,
+        ):
+            article["title"] = metadata["title"]
         if metadata["summary"]:
             article["summary"] = metadata["summary"]
         if metadata["image_url"]:
