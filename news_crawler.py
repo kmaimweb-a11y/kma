@@ -154,6 +154,51 @@ BLOCKED_GENERIC_KEYWORDS = [
     "광고",
 ]
 
+SOFT_AI_KEYWORDS_BY_SOURCE = {
+    "교육부": [
+        "에듀테크",
+        "디지털교과서",
+        "ai 디지털교과서",
+        "정보교육",
+        "소프트웨어 교육",
+    ],
+    "행정안전부": [
+        "디지털정부",
+        "공공ai",
+        "지능형",
+        "공공서비스",
+        "데이터기반행정",
+    ],
+    "산업통상자원부": [
+        "로봇",
+        "휴머노이드",
+        "제조ai",
+        "ai 반도체",
+        "산업데이터",
+        "자율주행",
+    ],
+    "국토교통부": [
+        "자율주행",
+        "스마트시티",
+        "디지털트윈",
+        "모빌리티",
+        "드론",
+    ],
+    "보건복지부": [
+        "의료ai",
+        "디지털헬스",
+        "보건의료데이터",
+        "헬스케어",
+    ],
+    "조달청": [
+        "나라장터",
+        "혁신제품",
+        "디지털서비스",
+        "ai",
+        "인공지능",
+    ],
+}
+
 
 def log(message):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -453,6 +498,7 @@ def is_relevant(article, source):
     title_lower = title.lower()
     summary_lower = summary.lower()
     haystack = (title_lower + " " + summary_lower).strip()
+    source_name = source.get("name", "")
 
     blocked_title_keywords = [
         "인사",
@@ -478,6 +524,11 @@ def is_relevant(article, source):
         keyword in summary_lower for keyword in STRICT_AI_KEYWORDS
     )
     if has_strict_ai:
+        return True
+
+    soft_keywords = [keyword.lower() for keyword in SOFT_AI_KEYWORDS_BY_SOURCE.get(source_name, [])]
+    has_source_soft_keyword = any(keyword in title_lower for keyword in soft_keywords)
+    if has_source_soft_keyword:
         return True
 
     has_source_keyword = False
