@@ -1,0 +1,31 @@
+name: Crawl Expanded AI Policy News
+
+on:
+  workflow_dispatch:
+  schedule:
+    # KST 08:00
+    - cron: "0 23 * * *"
+    # KST 14:00
+    - cron: "0 5 * * *"
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run crawler
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python news_crawler.py

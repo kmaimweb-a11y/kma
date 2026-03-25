@@ -1,0 +1,364 @@
+<div id="policyNewsBoard">
+  <style>
+    #policyNewsBoard {
+      font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color: #182033;
+      background: #f5f7fb;
+      border: 1px solid #dde4f0;
+      border-radius: 24px;
+      overflow: hidden;
+    }
+    #policyNewsBoard * {
+      box-sizing: border-box;
+      word-break: keep-all;
+    }
+    #policyNewsBoard a {
+      text-decoration: none;
+      color: inherit;
+    }
+    #policyNewsBoard .n-wrap {
+      padding: 30px 24px 34px;
+      background:
+        radial-gradient(circle at top left, rgba(77, 125, 255, 0.08), transparent 28%),
+        linear-gradient(180deg, #f8faff 0%, #eef3fb 100%);
+    }
+    #policyNewsBoard .n-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    #policyNewsBoard .n-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    #policyNewsBoard .n-title {
+      font-size: 32px;
+      line-height: 1.2;
+      font-weight: 900;
+      color: #11192d;
+      margin: 0 0 8px;
+    }
+    #policyNewsBoard .n-subtitle {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #667389;
+    }
+    #policyNewsBoard .n-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #edf3ff;
+      color: #2f63e8;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    #policyNewsBoard .n-list {
+      display: grid;
+      gap: 18px;
+    }
+    #policyNewsBoard .n-card {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #e2e8f2;
+      box-shadow: 0 14px 32px rgba(63, 79, 110, 0.08);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    #policyNewsBoard .n-card:hover {
+      transform: translateY(-2px);
+      border-color: #cdd8eb;
+      box-shadow: 0 18px 36px rgba(63, 79, 110, 0.12);
+    }
+    #policyNewsBoard .n-thumb {
+      position: relative;
+      min-height: 170px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #d9e4fb 0%, #eff4ff 100%);
+    }
+    #policyNewsBoard .n-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #policyNewsBoard .n-body {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    #policyNewsBoard .n-source-chip {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2f8;
+      color: #4c5d78;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    #policyNewsBoard .n-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    #policyNewsBoard .n-category-chip {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef8f1;
+      color: #226549;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    #policyNewsBoard .n-card-title {
+      margin: 0 0 12px;
+      font-size: 32px;
+      line-height: 1.34;
+      font-weight: 900;
+      color: #16213b;
+    }
+    #policyNewsBoard .n-summary {
+      margin: 0 0 18px;
+      font-size: 17px;
+      line-height: 1.8;
+      color: #55657e;
+    }
+    #policyNewsBoard .n-meta {
+      font-size: 16px;
+      font-weight: 700;
+      color: #27334b;
+    }
+    #policyNewsBoard .n-meta span {
+      color: #7a869b;
+      font-weight: 600;
+    }
+    #policyNewsBoard .n-empty,
+    #policyNewsBoard .n-loading,
+    #policyNewsBoard .n-error {
+      padding: 40px 24px;
+      text-align: center;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #e2e8f2;
+      color: #5f6d84;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    #policyNewsBoard .n-footer {
+      margin-top: 18px;
+      text-align: right;
+      font-size: 13px;
+      color: #8a95a8;
+    }
+
+    @media (max-width: 991px) {
+      #policyNewsBoard .n-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      #policyNewsBoard .n-card {
+        grid-template-columns: 1fr;
+      }
+      #policyNewsBoard .n-thumb {
+        min-height: 220px;
+      }
+      #policyNewsBoard .n-card-title {
+        font-size: 27px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      #policyNewsBoard .n-wrap {
+        padding: 22px 16px 26px;
+      }
+      #policyNewsBoard .n-title {
+        font-size: 26px;
+      }
+      #policyNewsBoard .n-card {
+        padding: 14px;
+        gap: 16px;
+        border-radius: 20px;
+      }
+      #policyNewsBoard .n-thumb {
+        min-height: 180px;
+        border-radius: 16px;
+      }
+      #policyNewsBoard .n-card-title {
+        font-size: 22px;
+      }
+      #policyNewsBoard .n-summary {
+        font-size: 15px;
+      }
+      #policyNewsBoard .n-meta {
+        font-size: 14px;
+      }
+    }
+  </style>
+
+  <div class="n-wrap">
+    <div class="n-shell">
+      <div class="n-head">
+        <div>
+          <h2 class="n-title">AI 정부정책 뉴스</h2>
+          <p class="n-subtitle">정책브리핑, 개인정보보호위원회, 과기정통부, 행정안전부, 디지털플랫폼정부위원회, KISA의 AI 정책 뉴스를 자동으로 모아 보여줍니다.</p>
+        </div>
+        <div class="n-badge" id="newsCountBadge">기사 불러오는 중</div>
+      </div>
+
+      <div class="n-list" id="newsList">
+        <div class="n-loading">최신 기사를 불러오는 중입니다.</div>
+      </div>
+
+      <div class="n-footer" id="newsFooter">데이터 연결 전</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.getElementById("policyNewsBoard");
+      if (!root || root.getAttribute("data-init") === "true") return;
+      root.setAttribute("data-init", "true");
+
+      var SUPABASE_URL = "https://mrhzvbtyhyydvmgymmoz.supabase.co";
+      var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yaHp2YnR5aHl5ZHZtZ3ltbW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMTA3NzAsImV4cCI6MjA4ODc4Njc3MH0.4h1Yf3hkFrpRGru1WxiMHAH2-w3hsF7EIUXe-floGKE";
+      var TABLE_NAME = "articles";
+      var LIMIT = 12;
+      var FALLBACK_IMAGE = "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1200&q=80";
+
+      var newsList = root.querySelector("#newsList");
+      var newsCountBadge = root.querySelector("#newsCountBadge");
+      var newsFooter = root.querySelector("#newsFooter");
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatDate(value) {
+        if (!value) return "";
+        var date = new Date(value);
+        if (isNaN(date.getTime())) return String(value).slice(0, 10);
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, "0");
+        var day = String(date.getDate()).padStart(2, "0");
+        return year + "." + month + "." + day;
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "";
+        var date = new Date(value);
+        if (isNaN(date.getTime())) return "";
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, "0");
+        var day = String(date.getDate()).padStart(2, "0");
+        var hour = String(date.getHours()).padStart(2, "0");
+        var minute = String(date.getMinutes()).padStart(2, "0");
+        return year + "." + month + "." + day + " " + hour + ":" + minute;
+      }
+
+      function renderItems(items) {
+        if (!items || !items.length) {
+          newsCountBadge.textContent = "기사 0건";
+          newsList.innerHTML = '<div class="n-empty">등록된 기사가 아직 없습니다.<br>Supabase에 데이터를 넣으면 여기에 자동으로 표시됩니다.</div>';
+          newsFooter.textContent = "기사 없음";
+          return;
+        }
+
+        var html = items.map(function (item) {
+          var imageUrl = item.image_url ? escapeHtml(item.image_url) : FALLBACK_IMAGE;
+          var articleUrl = escapeHtml(item.article_url || "#");
+          var title = escapeHtml(item.title || "제목 없음");
+          var summary = escapeHtml(item.summary || "요약 정보가 아직 등록되지 않았습니다.");
+          var sourceName = escapeHtml(item.source_name || "출처 미상");
+          var category = escapeHtml(item.category || "정부정책");
+          var publishedAt = formatDate(item.published_at);
+
+          return ''
+            + '<a class="n-card" href="' + articleUrl + '" target="_blank" rel="noopener noreferrer">'
+            + '  <div class="n-thumb">'
+            + '    <img src="' + imageUrl + '" alt="' + title + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + FALLBACK_IMAGE + '\';">'
+            + '  </div>'
+            + '  <div class="n-body">'
+            + '    <div class="n-chip-row"><div class="n-source-chip">' + sourceName + '</div><div class="n-category-chip">' + category + '</div></div>'
+            + '    <h3 class="n-card-title">' + title + '</h3>'
+            + '    <p class="n-summary">' + summary + '</p>'
+            + '    <div class="n-meta">' + publishedAt + ' <span>/ ' + sourceName + '</span></div>'
+            + '  </div>'
+            + '</a>';
+        }).join("");
+
+        newsList.innerHTML = html;
+        newsCountBadge.textContent = "기사 " + items.length + "건";
+        newsFooter.textContent = "마지막 렌더링: " + formatDateTime(new Date().toISOString());
+      }
+
+      function renderError(message) {
+        newsCountBadge.textContent = "불러오기 실패";
+        newsList.innerHTML = '<div class="n-error">기사 데이터를 불러오지 못했습니다.<br>' + escapeHtml(message || "오류가 발생했습니다.") + '</div>';
+        newsFooter.textContent = "연결 오류";
+      }
+
+      async function loadArticles() {
+        if (!SUPABASE_URL || SUPABASE_URL.indexOf("YOUR_SUPABASE_URL") > -1) {
+          renderError("Supabase URL을 먼저 입력해 주세요.");
+          return;
+        }
+        if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.indexOf("YOUR_SUPABASE_ANON_KEY") > -1) {
+          renderError("Supabase anon key를 먼저 입력해 주세요.");
+          return;
+        }
+
+        var apiUrl =
+          SUPABASE_URL.replace(/\/$/, "") +
+          "/rest/v1/" +
+          TABLE_NAME +
+          "?select=id,title,summary,image_url,published_at,category,source_name,article_url,created_at" +
+          "&order=published_at.desc.nullslast,created_at.desc" +
+          "&limit=" + LIMIT;
+
+        try {
+          var response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+              "Content-Type": "application/json"
+            }
+          });
+
+          var text = await response.text();
+          var data = text ? JSON.parse(text) : [];
+
+          if (!response.ok) {
+            throw new Error((data && (data.message || data.error_description || data.hint || data.code)) || "데이터 조회 실패");
+          }
+
+          renderItems(Array.isArray(data) ? data : []);
+        } catch (error) {
+          renderError(error && error.message ? error.message : "알 수 없는 오류");
+        }
+      }
+
+      loadArticles();
+    })();
+  </script>
+</div>
