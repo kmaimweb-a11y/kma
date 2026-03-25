@@ -13,6 +13,7 @@ import requests
 
 DEFAULT_IMAGE_URL = "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1200&q=80"
 REQUEST_TIMEOUT = 20
+MAX_RETRIES = 3
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
@@ -73,8 +74,34 @@ def log(message):
 
 def request_session():
     session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
+    session.headers.update(
+        {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
     return session
+
+
+def fetch_with_retry(session, url, timeout=REQUEST_TIMEOUT):
+    last_error = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = session.get(url, timeout=timeout, allow_redirects=True)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as error:
+            last_error = error
+            if attempt == MAX_RETRIES:
+                break
+            wait_seconds = 1.5 * attempt
+            log(f"Retrying {url} ({attempt}/{MAX_RETRIES - 1}) after error: {error}")
+            time.sleep(wait_seconds)
+    raise last_error
 
 
 def strip_tags(value):
@@ -228,8 +255,7 @@ def fetch_og_image(session, url):
     if not url:
         return ""
     try:
-        response = session.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
+        response = fetch_with_retry(session, url, timeout=REQUEST_TIMEOUT)
     except Exception:
         return ""
 
@@ -249,8 +275,7 @@ def fetch_article_metadata(session, url):
     if not url:
         return None
     try:
-        response = session.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
+        response = fetch_with_retry(session, url, timeout=REQUEST_TIMEOUT)
     except Exception:
         return None
 
@@ -317,8 +342,7 @@ def is_relevant(article, source):
 
 def load_source_articles(session, source):
     log(f"Source fetch started: {source['name']}")
-    response = session.get(source["url"], timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
+    response = fetch_with_retry(session, source["url"], timeout=REQUEST_TIMEOUT)
 
     if source["type"] == "rss":
         raw_articles = parse_rss(response.text, source)
