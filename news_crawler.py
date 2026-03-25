@@ -177,7 +177,7 @@ def parse_html_list(html_text, source):
     articles = []
     seen = set()
 
-    anchor_pattern = re.compile(r"<a[^>]+href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
+    anchor_pattern = re.compile(r"<a[^>]+href=[\"']([^\"']+)[^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
     for href, inner_html in anchor_pattern.findall(html_text):
         absolute_url = urljoin(source["url"], normalize_url(href))
         title = strip_tags(inner_html)
@@ -321,13 +321,6 @@ def chunked(values, size):
         yield values[index : index + size]
 
 
-def upsert_articles(headers = build_supabase_headers(service_key)):
-    if not articles:
-        log("No articles to upsert.")
-        return 0
-
-    endpoint = supabase_url.rstrip("/") + "/rest/v1/articles"
-    headers = {
 def build_supabase_headers(api_key):
     headers = {
         "apikey": api_key,
@@ -338,7 +331,14 @@ def build_supabase_headers(api_key):
         headers["Authorization"] = f"Bearer {api_key}"
     return headers
 
-    }
+
+def upsert_articles(session, supabase_url, service_key, articles):
+    if not articles:
+        log("No articles to upsert.")
+        return 0
+
+    endpoint = supabase_url.rstrip("/") + "/rest/v1/articles"
+    headers = build_supabase_headers(service_key)
 
     inserted = 0
     for batch in chunked(articles, 50):
