@@ -99,6 +99,12 @@ def normalize_url(value):
     url = (value or "").strip()
     if url.startswith("http://www.kisa.or.kr/"):
         url = "https://" + url[len("http://") :]
+    url = re.sub(r"(?i)^http://", "https://", url)
+    url = re.sub(r"[?&](utm_[^=&]+|fbclid|gclid)=[^&#]+", "", url)
+    url = re.sub(r"[?&]call_from=rsslink", "", url)
+    url = re.sub(r"[?&]$", "", url)
+    url = url.replace("?&", "?")
+    url = url.rstrip("?")
     return url
 
 
@@ -128,6 +134,15 @@ def parse_datetime(value):
 def guess_source_from_url(url):
     host = urlparse(url).netloc.lower().replace("www.", "")
     return host or "출처 미상"
+
+
+def normalize_title(value):
+    text = strip_tags(value).lower()
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"[\"'“”‘’\[\]\(\)\{\}\.,!?:;/\-]", "", text)
+    text = re.sub(r"\bkisa\b", "", text)
+    text = re.sub(r"\bai\b", "인공지능", text)
+    return text.strip()
 
 
 def first_text(parent, *tags):
@@ -177,7 +192,7 @@ def parse_html_list(html_text, source):
     articles = []
     seen = set()
 
-    anchor_pattern = re.compile(r"<a[^>]+href=[\"']([^\"']+)[^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
+    anchor_pattern = re.compile(r"<a[^>]+href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", re.IGNORECASE | re.DOTALL)
     for href, inner_html in anchor_pattern.findall(html_text):
         absolute_url = urljoin(source["url"], normalize_url(href))
         title = strip_tags(inner_html)
@@ -270,15 +285,32 @@ def fetch_article_metadata(session, url):
 
 
 def is_relevant(article, source):
-    haystack = " ".join(
-        [
-            article.get("title", ""),
-            article.get("summary", ""),
-            article.get("category", ""),
-        ]
-    ).lower()
+    title = strip_tags(article.get("title", ""))
+    summary = strip_tags(article.get("summary", ""))
+    title_lower = title.lower()
+    summary_lower = summary.lower()
+
+    blocked_title_keywords = [
+        "인사",
+        "채용",
+        "모집",
+        "입찰",
+        "공지",
+        "교육 안내",
+        "행사 안내",
+        "광고",
+    ]
+    allowed_with_blocked = ["ai", "인공지능", "생성형", "ax", "디지털", "데이터", "알고리즘", "보안"]
+
+    if any(keyword in title_lower for keyword in blocked_title_keywords):
+        if not any(keyword in title_lower for keyword in allowed_with_blocked):
+            return False
+
     for keyword in source.get("keywords", []):
-        if keyword.lower() in haystack:
+        keyword_lower = keyword.lower()
+        if keyword_lower in title_lower:
+            return True
+        if keyword_lower in summary_lower:
             return True
     return False
 
@@ -356,13 +388,26 @@ def upsert_articles(session, supabase_url, service_key, articles):
 
 
 def deduplicate(articles):
-    seen = set()
+    seen_urls = set()
+    seen_titles = set()
     unique = []
     for article in articles:
         article_url = normalize_url(article.get("article_url", ""))
-        if not article_url or article_url in seen:
+        normalized_title = normalize_title(article.get("title", ""))
+        published_key = (article.get("published_at") or "")[:10]
+        source_key = (article.get("source_name") or "").strip().lower()
+        title_key = source_key + "|" + normalized_title + "|" + published_key
+
+        if not article_url:
             continue
-        seen.add(article_url)
+        if article_url in seen_urls:
+            continue
+        if normalized_title and title_key in seen_titles:
+            continue
+
+        seen_urls.add(article_url)
+        if normalized_title:
+            seen_titles.add(title_key)
         article["article_url"] = article_url
         article["source_name"] = article.get("source_name") or guess_source_from_url(article_url)
         article["image_url"] = article.get("image_url") or DEFAULT_IMAGE_URL
